@@ -1,14 +1,21 @@
+import argparse
 import socket
 import struct
 
+# print packet information before each packet is sent to the requester
+def print_packet_information(requester_host_name, sequence_number, data_length, data):
+    print("time packet is sent: ")
+    print("IP address of requester: ", requester_host_name)
+    print("sequence number: ", sequence_number)
+    print("first 4 bytes of the payload: ", data[:4].decode("utf-8"))
+
+# create socket object
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-udp_host = socket.gethostname()
-udp_port = 12345
+requester_host_name = socket.gethostname()
+requester_port_number = 12345
 
 data = "Hello World! My name is Charmaine.".encode()
-print("UDP target IP: ", udp_host)
-print("UDP target port: ", udp_port)
 
 # assemble udp header
 packet_type = 'R'.encode('ascii')
@@ -18,4 +25,6 @@ udp_header = struct.pack("!cII", packet_type, sequence_number, data_length)
 
 packet_with_header = udp_header + data
 
-sock.sendto(packet_with_header, (udp_host, udp_port))
+print_packet_information(requester_host_name, sequence_number, data_length, data)
+
+sock.sendto(packet_with_header, (requester_host_name, requester_port_number))
