@@ -1,6 +1,21 @@
+import sys
 from enum import Enum
 import socket
 import struct 
+
+#Global variables
+udp_port = 12345
+
+#Checking the command line arguments
+def check_sys_arg():
+    if(len(sys.argv) != 5):
+        print('Please enter the correct number of arguments')
+    if(str(sys.argv[1]) != '-p' | str(sys.argv[3]) != '-o'):
+        print('Please enter arguments in correct format')
+    if(int(sys.argv[2]) <= 2049 | int(sys.argv[2]) >= 65536):
+        print('Please enter the correct requester port number')
+    global udp_port
+    udp_port = sys.argv[2]
 
 # printing information for each packet that arrives
 # TODO: check packet type and print diff information if it is END packet
@@ -15,7 +30,11 @@ def print_receipt_information(header, data):
 # reads and parses tracker.txt into a nested dictionary
 # details of nested dictionary are outlined below
 def read_and_parse_tracker_file(file_name):
-    file = open(file_name, "r")
+    try:
+        file = open(file_name, "r")
+    except:
+        print('Please enter the correct file name!')
+    
     file_lines = file.readlines()
     print(file_lines)
 
@@ -51,7 +70,6 @@ read_and_parse_tracker_file("tracker.txt")
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 udp_host = socket.gethostname()
-udp_port = 12345
 sock.bind((udp_host, udp_port))
 
 while True:
