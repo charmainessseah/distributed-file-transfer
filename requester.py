@@ -13,14 +13,14 @@ def print_receipt_information(header, data):
     print("payload length: ", header[2])
     print("first 4 bytes of the payload: ", data[:4].decode("utf-8"))
 
-# reads a text file and returns a list of strings
-# each element represent each line in the text file
+# reads and parses tracker.txt into a nested dictionary
+# details of nested dictionary are outlined below
 def read_and_parse_tracker_file(file_name):
     file = open(file_name, "r")
     file_lines = file.readlines()
     print(file_lines)
 
-    # below is the nested dictionary format created
+    # below is the structure of the nested dictionary
     # filename: {
     #          id: {
     #              sender_host_name: "some_host_name",
@@ -54,7 +54,6 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 udp_host = socket.gethostname()
 udp_port = 12345
 sock.bind((udp_host, udp_port))
-
 
 while True:
     print("Waiting for sender...")
