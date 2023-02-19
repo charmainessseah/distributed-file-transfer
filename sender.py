@@ -1,6 +1,12 @@
 import argparse
+from enum import Enum
 import socket
 import struct
+
+class Packet_Type(Enum):
+    request = 'R'
+    data = 'D'
+    end = 'E'
 
 # print packet information before each packet is sent to the requester
 def print_packet_information(requester_host_name, sequence_number, data_length, data):
@@ -18,7 +24,7 @@ requester_port_number = 12345
 data = "Hello World! My name is Charmaine.".encode()
 
 # assemble udp header
-packet_type = 'R'.encode('ascii')
+packet_type = (Packet_Type.data.value).encode('ascii')
 sequence_number = 1112
 data_length = len(data) 
 udp_header = struct.pack("!cII", packet_type, sequence_number, data_length)
