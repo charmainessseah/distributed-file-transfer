@@ -42,35 +42,56 @@ def read_and_parse_tracker_file(file_name):
     # filename: {
     #          id: {
     #              sender_host_name: "some_host_name",
-    #              sender_port: 12345
+    #              sender_port_number: 12345
     #          }
     # }
-    tracker_table =  {}
+    tracker_dict =  {}
 
     for file_line in file_lines:
         words_in_line = file_line.split()
         curr_file_name = words_in_line[0]
-        id = words_in_line[1]
+        id = int(words_in_line[1])
         sender_host_name = words_in_line[2]
-        sender_port = words_in_line[3]
+        sender_port_number = words_in_line[3]
 
-        if curr_file_name not in tracker_table:
-            tracker_table[curr_file_name] = {}
-        if id not in tracker_table[curr_file_name]:
-            tracker_table[curr_file_name][id] = {}
+        if curr_file_name not in tracker_dict:
+            tracker_dict[curr_file_name] = {}
+        if id not in tracker_dict[curr_file_name]:
+            tracker_dict[curr_file_name][id] = {}
 
-        tracker_table[curr_file_name][id]["sender_host_name"] = sender_host_name 
-        tracker_table[curr_file_name][id]["sender_port"] = sender_port
+        tracker_dict[curr_file_name][id]["sender_host_name"] = sender_host_name
+        tracker_dict[curr_file_name][id]["sender_port_number"] = int(sender_port_number)
 
-    print(tracker_table)
+    print(tracker_dict)
+    return tracker_dict
 
-read_and_parse_tracker_file("tracker.txt")
+# send request packed with file name to the sender
+def send_request_packet_to_sender(tracker_dict, file_name, id):
+    data = file_name
+    file_id_dict = tracker_dict[file_name]
+    
+    sender_host_name = file_id_dict[id]['sender_host_name']
+    sender_port_number = file_id_dict[id]['sender_port_number']
+
+    print(data, sender_host_name, sender_port_number)
+
+
+
+tracker_dict = read_and_parse_tracker_file("tracker.txt")
 
 # create socket object
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 udp_host = socket.gethostname()
 sock.bind((udp_host, udp_port))
+
+# request the senders for packets
+file_name = 'hello.txt'
+file_id_dict = tracker_dict[file_name]
+number_of_chunks_to_request = len(file_id_dict)
+
+for id in range(0, number_of_chunks_to_request):
+    send_request_packet_to_sender(tracker_dict, file_name, id + 1)
 
 while True:
     print("Waiting for sender...")
