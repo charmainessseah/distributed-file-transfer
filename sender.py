@@ -126,7 +126,7 @@ data = read_file(file_name).encode()
 print(data)
 
 # assemble udp header
-packet_type = (Packet_Type.end.value).encode('ascii')
+packet_type = (Packet_Type.data.value).encode('ascii')
 sequence_number = 1112
 data_length = len(data) 
 udp_header = struct.pack('!cII', packet_type, sequence_number, data_length)
@@ -137,4 +137,15 @@ print_packet_information(requester_host_name, sequence_number, data)
 
 # send data
 print('sending the file data back to the requester')
+sock.sendto(packet_with_header, (requester_host_name, requester_port_number))
+
+# send END packet after all data has been sent
+print('All file data has been sent, now sending END packet')
+data = ''.encode()
+packet_type = (Packet_Type.end.value).encode('ascii')
+sequence_number = 1112
+data_length = 0 
+udp_header = struct.pack('!cII', packet_type, sequence_number, data_length)
+
+packet_with_header = udp_header + data
 sock.sendto(packet_with_header, (requester_host_name, requester_port_number))

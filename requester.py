@@ -42,7 +42,6 @@ def read_and_parse_tracker_file(file_name):
         print('Please enter the correct file name!')
     
     file_lines = file.readlines()
-    print(file_lines)
 
     # below is the structure of the nested dictionary
     # filename: {
@@ -68,23 +67,32 @@ def read_and_parse_tracker_file(file_name):
         tracker_dict[curr_file_name][id]['sender_host_name'] = sender_host_name
         tracker_dict[curr_file_name][id]['sender_port_number'] = int(sender_port_number)
 
-    print(tracker_dict)
+
     return tracker_dict
 
 # send request packed with file name to the sender
 def send_request_packet_to_sender(tracker_dict, file_name, id):
-    data = file_name
+    data = file_name.encode()
     file_id_dict = tracker_dict[file_name]
     
     sender_host_name = file_id_dict[id]['sender_host_name']
     sender_port_number = file_id_dict[id]['sender_port_number']
 
-    print(data, sender_host_name, sender_port_number)
+    # assemble udp header
+    packet_type = (Packet_Type.request.value).encode('ascii')
+    sequence_number = id
+    data_length = len(data)
+    udp_header = struct.pack('!cII', packet_type, sequence_number, data_length)
+
+    packet_with_header = udp_header + data
+
+    print('sending request to sender...')
+    sock.sendto(packet_with_header, (sender_host_name, sender_port_number))
 
 #Global variables
 udp_port = 12345
 
-tracker_dict = read_and_parse_tracker_file('tracker.txt')
+tracker_dict = read_and_parse_tracker_file('tracker-test.txt')
 
 # create socket object
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -92,34 +100,18 @@ udp_host = socket.gethostname()
 sock.bind((udp_host, udp_port))
 
 # request the senders for packets
+requested_file_name = 'split.txt'
+file_id_dict = tracker_dict[requested_file_name]
+number_of_chunks_to_request = len(file_id_dict)
 
-# file_name = 'hello.txt'
-# file_id_dict = tracker_dict[file_name]
-# number_of_chunks_to_request = len(file_id_dict)
-
-# for id in range(0, number_of_chunks_to_request):
-#     send_request_packet_to_sender(tracker_dict, file_name, id + 1)
-
-sender_host_name = socket.gethostname() # change this
-sender_port_number = 12344 # change this
-
-data = 'split.txt'.encode() # change this to the file name from input
-
-# assemble udp header
-packet_type = (Packet_Type.request.value).encode('ascii')
-sequence_number = 1112
-data_length = len(data)
-udp_header = struct.pack('!cII', packet_type, sequence_number, data_length)
-
-packet_with_header = udp_header + data
-
-print('sending request to sender...')
-sock.sendto(packet_with_header, (sender_host_name, sender_port_number))
+for id in range(0, number_of_chunks_to_request):
+    send_request_packet_to_sender(tracker_dict, requested_file_name, id + 1)
 
 # wait for requested packets from sender while the END packet has not been sent
-while True:
-    print('Waiting for the sender to send requested data back...')
+print('-----------------------------------------------------------------------------')
+print("Requester's print information:")
 
+while True:
     packet_with_header, sender_address = sock.recvfrom(1024)
     header = struct.unpack("!cII", packet_with_header[:9])
     data = packet_with_header[9:]
@@ -129,3 +121,5 @@ while True:
     packet_type = header[0].decode('ascii')
     if (packet_type == 'E'):
         break
+
+print('-----------------------------------------------------------------------------')
