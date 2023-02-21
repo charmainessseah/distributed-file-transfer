@@ -1,5 +1,4 @@
 import sys
-import argparse
 from enum import Enum
 import socket
 import struct
@@ -15,13 +14,6 @@ sender_port_number = 12344
 sequence_number = 0
 data_length = 0
 rate = 0
-
-#elif(str(sys.argv[1]) != '-p' | str(sys.argv[3]) != '-g' | str(sys.argv[5]) != '-r' | str(sys.argv[7]) != '-q' | str(sys.argv[9]) != '-l'):
-#        print('Please enter arguments in correct format')
-#    elif(int(sys.argv[2]) <= 2049 | int(sys.argv[2]) >= 65536):
-#       print('Please enter the correct sender port number')
-#   elif(int(sys.argv[4]) <= 2049 | int(sys.argv[4]) >= 65536):
-#       print('Please enter the correct requester port number')
 
 def check_input(arg):
     index = -1
@@ -94,32 +86,48 @@ def check_sys_args():
         print('Please enter correct arguments in correct format')
         exit()
 
-        
-
-
 # print packet information before each packet is sent to the requester
 def print_packet_information(requester_host_name, sequence_number, data_length, data):
-    print("time packet is sent: ")
-    print("IP address of requester: ", requester_host_name)
-    print("sequence number: ", sequence_number)
-    print("first 4 bytes of the payload: ", data[:4].decode("utf-8"))
+    print('time packet is sent: ')
+    print('IP address of requester: ', requester_host_name)
+    print('sequence number: ', sequence_number)
+    print('first 4 bytes of the payload: ', data[:4].decode('utf-8'))
 
+def read_file(file_name):
+    try:
+        with open(file_name, 'r') as reader:
+            data = reader.read()
+            return data
+    except:
+        print('Please enter the correct file name!')
 
 check_sys_args()
+print('sender port number: ', sender_port_number)
+print('requester port number: ', requester_port_number)
 
 # create socket object
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+udp_host = socket.gethostname()
+sock.bind((udp_host, sender_port_number))
+
+# wait for request packet
+packet_with_header, sender_address = sock.recvfrom(1024)
+header = struct.unpack("!cII", packet_with_header[:9])
+file_name = packet_with_header[9:]
+
+print('request packet data sent a file name which is: ', file_name.decode('utf-8'))
 
 requester_host_name = socket.gethostname()
-requester_port_number = 12345
 
-data = "Hello World! My name is Charmaine.".encode()
+# read the file data
+data = read_file(file_name).encode()
+print(data)
 
 # assemble udp header
-packet_type = (Packet_Type.data.value).encode('ascii')
+packet_type = (Packet_Type.end.value).encode('ascii')
 sequence_number = 1112
 data_length = len(data) 
-udp_header = struct.pack("!cII", packet_type, sequence_number, data_length)
+udp_header = struct.pack('!cII', packet_type, sequence_number, data_length)
 
 packet_with_header = udp_header + data
 
