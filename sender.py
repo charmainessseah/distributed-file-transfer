@@ -123,14 +123,12 @@ packet_with_header, sender_address = sock.recvfrom(1024)
 header = struct.unpack("!cII", packet_with_header[:9])
 file_name = packet_with_header[9:]
 
-print('request packet data sent a file name which is: ', file_name.decode('utf-8'))
+print('received filename from requester: ', file_name.decode('utf-8'))
 
 requester_host_name = socket.gethostname()
 
 # read the file data
-print('reading file...')
 data = read_file(file_name).encode()
-print(data)
 
 # assemble udp header
 packet_type = (Packet_Type.data.value).encode('ascii')

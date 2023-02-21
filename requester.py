@@ -68,7 +68,6 @@ def read_and_parse_tracker_file(file_name):
         tracker_dict[curr_file_name][id]['sender_host_name'] = sender_host_name
         tracker_dict[curr_file_name][id]['sender_port_number'] = int(sender_port_number)
 
-
     return tracker_dict
 
 # send request packed with file name to the sender
