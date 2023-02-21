@@ -100,25 +100,25 @@ sock.bind((udp_host, udp_port))
 # for id in range(0, number_of_chunks_to_request):
 #     send_request_packet_to_sender(tracker_dict, file_name, id + 1)
 
-sender_host_name = socket.gethostname()
-sender_port_number = 12344
+sender_host_name = socket.gethostname() # change this
+sender_port_number = 12344 # change this
 
-data = 'split.txt'.encode()
+data = 'split.txt'.encode() # change this to the file name from input
 
 # assemble udp header
 packet_type = (Packet_Type.request.value).encode('ascii')
 sequence_number = 1112
-data_length = len(data) 
+data_length = len(data)
 udp_header = struct.pack('!cII', packet_type, sequence_number, data_length)
 
 packet_with_header = udp_header + data
 
+print('sending request to sender...')
 sock.sendto(packet_with_header, (sender_host_name, sender_port_number))
-
 
 # wait for requested packets from sender while the END packet has not been sent
 while True:
-    print('Waiting for sender...')
+    print('Waiting for the sender to send requested data back...')
 
     packet_with_header, sender_address = sock.recvfrom(1024)
     header = struct.unpack("!cII", packet_with_header[:9])

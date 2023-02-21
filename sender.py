@@ -8,7 +8,7 @@ class Packet_Type(Enum):
     data = 'D'
     end = 'E'
 
-#variables sent as command line arguments, initializing with dummy values
+# variables sent as command line arguments, initializing with dummy values
 requester_port_number = 12345
 sender_port_number = 12344
 sequence_number = 0
@@ -87,7 +87,7 @@ def check_sys_args():
         exit()
 
 # print packet information before each packet is sent to the requester
-def print_packet_information(requester_host_name, sequence_number, data_length, data):
+def print_packet_information(requester_host_name, sequence_number, data):
     print('time packet is sent: ')
     print('IP address of requester: ', requester_host_name)
     print('sequence number: ', sequence_number)
@@ -111,6 +111,7 @@ udp_host = socket.gethostname()
 sock.bind((udp_host, sender_port_number))
 
 # wait for request packet
+print('waiting for requester to send the filename it wants to retrieve...')
 packet_with_header, sender_address = sock.recvfrom(1024)
 header = struct.unpack("!cII", packet_with_header[:9])
 file_name = packet_with_header[9:]
@@ -120,6 +121,7 @@ print('request packet data sent a file name which is: ', file_name.decode('utf-8
 requester_host_name = socket.gethostname()
 
 # read the file data
+print('reading file...')
 data = read_file(file_name).encode()
 print(data)
 
@@ -131,6 +133,8 @@ udp_header = struct.pack('!cII', packet_type, sequence_number, data_length)
 
 packet_with_header = udp_header + data
 
-print_packet_information(requester_host_name, sequence_number, data_length, data)
+print_packet_information(requester_host_name, sequence_number, data)
 
+# send data
+print('sending the file data back to the requester')
 sock.sendto(packet_with_header, (requester_host_name, requester_port_number))
