@@ -32,6 +32,7 @@ def print_receipt_information(header, data):
     print('sequence num: ', header[1])
     print('length: ', header[2])
     print('payload: ', data.decode("utf-8"))
+    print()
 
 # reads and parses tracker.txt into a nested dictionary
 # details of nested dictionary are outlined below
@@ -82,9 +83,9 @@ def send_request_packet_to_sender(tracker_dict, file_name, id):
     packet_type = (Packet_Type.request.value).encode('ascii')
     sequence_number = id
     data_length = len(data)
-    udp_header = struct.pack('!cII', packet_type, sequence_number, data_length)
+    header = struct.pack('!cII', packet_type, sequence_number, data_length)
 
-    packet_with_header = udp_header + data
+    packet_with_header = header + data
 
     print('sending request to sender...')
     sock.sendto(packet_with_header, (sender_host_name, sender_port_number))

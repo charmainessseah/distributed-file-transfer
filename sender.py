@@ -87,11 +87,18 @@ def check_sys_args():
         exit()
 
 # print packet information before each packet is sent to the requester
-def print_packet_information(requester_host_name, sequence_number, data):
-    print('time packet is sent: ')
-    print('IP address of requester: ', requester_host_name)
-    print('sequence number: ', sequence_number)
-    print('first 4 bytes of the payload: ', data[:4].decode('utf-8'))
+def print_packet_information(requester_host_name, sequence_number, data, packet_type):
+    if (packet_type == 'D'):
+        print('DATA Packet')
+    elif (packet_type == 'E'):
+        print('END Packet')
+
+    print('send time: ')
+    print('requester addr: ', requester_host_name)
+    print('Sequence num: ', sequence_number)
+    print('length: ', len(data))
+    print('payload: ', data.decode('utf-8'))
+    print()
 
 def read_file(file_name):
     try:
@@ -129,23 +136,26 @@ print(data)
 packet_type = (Packet_Type.data.value).encode('ascii')
 sequence_number = 1112
 data_length = len(data) 
-udp_header = struct.pack('!cII', packet_type, sequence_number, data_length)
+header = struct.pack('!cII', packet_type, sequence_number, data_length)
 
-packet_with_header = udp_header + data
+packet_with_header = header + data
 
-print_packet_information(requester_host_name, sequence_number, data)
+print('-----------------------------------------------------------------------------')
+print('sender', sequence_number, "'s print information:")
 
 # send data
-print('sending the file data back to the requester')
 sock.sendto(packet_with_header, (requester_host_name, requester_port_number))
+print_packet_information(requester_host_name, sequence_number, data, packet_type.decode())
 
 # send END packet after all data has been sent
-print('All file data has been sent, now sending END packet')
 data = ''.encode()
 packet_type = (Packet_Type.end.value).encode('ascii')
 sequence_number = 1112
 data_length = 0 
-udp_header = struct.pack('!cII', packet_type, sequence_number, data_length)
+header = struct.pack('!cII', packet_type, sequence_number, data_length)
 
-packet_with_header = udp_header + data
+packet_with_header = header + data
 sock.sendto(packet_with_header, (requester_host_name, requester_port_number))
+print_packet_information(requester_host_name, sequence_number, data, packet_type.decode())
+
+print('-----------------------------------------------------------------------------')
