@@ -1,12 +1,13 @@
-import sys
+from datetime import datetime
 from enum import Enum
 import socket
 import struct 
+import sys
 
 class Packet_Type(Enum):
-    request = 'R'
-    data = 'D'
-    end = 'E'
+    REQUEST = 'R'
+    DATA = 'D'
+    END = 'E'
 
 #Checking the command line arguments
 def check_sys_arg():
@@ -27,7 +28,7 @@ def print_receipt_information(header, data):
     elif (packet_type == 'E'):
         print('END Packet')
 
-    print('send time: ')
+    print('recv time: ', datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
     print('requester addr: ')
     print('sequence num: ', header[1])
     print('length: ', header[2])
@@ -79,7 +80,7 @@ def send_request_packet_to_sender(tracker_dict, file_name, id):
     sender_port_number = file_id_dict[id]['sender_port_number']
 
     # assemble udp header
-    packet_type = (Packet_Type.request.value).encode('ascii')
+    packet_type = (Packet_Type.REQUEST.value).encode('ascii')
     sequence_number = id
     data_length = len(data)
     header = struct.pack('!cII', packet_type, sequence_number, data_length)
@@ -119,6 +120,7 @@ while True:
     print_receipt_information(header, data)
 
     packet_type = header[0].decode('ascii')
+     # TODO: how do we know when to end? Each sender ends an END packet when it is done with its chunk
     if (packet_type == 'E'):
         break
 
