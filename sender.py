@@ -101,13 +101,25 @@ def print_packet_information(requester_host_name, sequence_number, data, packet_
     print('payload: ', data.decode('utf-8'))
     print()
 
+# if file exists, read the file and return the file data
+# if file does not exist, return -1
 def read_file(file_name):
     try:
         with open(file_name, 'r') as reader:
             data = reader.read()
             return data
     except:
-        print('Please enter the correct file name!')
+        return -1
+
+def send_packet(data, packet_type, sequence_number, requester_host_name, requester_port_number):
+    data = data.encode()
+
+    # assemble udp header
+    header = struct.pack('!cII', packet_type.encode('ascii'), sequence_number, len(data))
+    packet_with_header = header + data
+
+    sock.sendto(packet_with_header, (requester_host_name, requester_port_number))
+    print_packet_information(requester_host_name, sequence_number, data, packet_type)
 
 check_sys_args()
 print('sender port number: ', sender_port_number)
@@ -129,33 +141,16 @@ print('received filename from requester: ', file_name.decode('utf-8'))
 requester_host_name = socket.gethostname()
 
 # read the file data
-data = read_file(file_name).encode()
-
-# assemble udp header
-packet_type = (Packet_Type.DATA.value).encode('ascii')
-sequence_number = 1112
-data_length = len(data) 
-header = struct.pack('!cII', packet_type, sequence_number, data_length)
-
-packet_with_header = header + data
+# TODO: if file does not exist (data == -1), then we send the END packet immediately
+data = read_file(file_name)
 
 print('-----------------------------------------------------------------------------')
-print('sender', sequence_number, "'s print information:")
+print("sender's print information:")
 
-# TODO: we have to send data in intervals (there is a max amt of data you can send in a chunk)
-# send data
-sock.sendto(packet_with_header, (requester_host_name, requester_port_number))
-print_packet_information(requester_host_name, sequence_number, data, packet_type.decode())
+# send data packets here
+send_packet(data, Packet_Type.DATA.value, sequence_number, requester_host_name, requester_port_number)
 
-# send END packet after all data has been sent
-data = ''.encode()
-packet_type = (Packet_Type.END.value).encode('ascii')
-sequence_number = 1112
-data_length = 0 
-header = struct.pack('!cII', packet_type, sequence_number, data_length)
-
-packet_with_header = header + data
-sock.sendto(packet_with_header, (requester_host_name, requester_port_number))
-print_packet_information(requester_host_name, sequence_number, data, packet_type.decode())
+# send end packet when done with data packets
+send_packet('end packet!', Packet_Type.END.value, sequence_number, requester_host_name, requester_port_number)
 
 print('-----------------------------------------------------------------------------')
