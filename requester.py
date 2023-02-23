@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from datetime import datetime
 from enum import Enum
 import socket
@@ -81,7 +82,7 @@ def send_request_packet_to_sender(tracker_dict, file_name, id):
 
     # assemble udp header
     packet_type = (Packet_Type.REQUEST.value).encode('ascii')
-    sequence_number = id
+    sequence_number = 0
     data_length = len(data)
     header = struct.pack('!cII', packet_type, sequence_number, data_length)
 
@@ -104,6 +105,7 @@ sock.bind((udp_host, udp_port))
 requested_file_name = 'split.txt'
 file_id_dict = tracker_dict[requested_file_name]
 number_of_chunks_to_request = len(file_id_dict)
+print(file_id_dict)
 
 for id in range(0, number_of_chunks_to_request):
     send_request_packet_to_sender(tracker_dict, requested_file_name, id + 1)
@@ -112,16 +114,43 @@ for id in range(0, number_of_chunks_to_request):
 print('-----------------------------------------------------------------------------')
 print("Requester's print information:")
 
+# fill this list in order of data chunks that are received
+data_chunks = [None] * number_of_chunks_to_request
+data_chunks_index = 0
+
+# dictionary is used to keep track of the index of data chunk for a sequence number in data_chunks
+# dictionary format = { data chunk sequence number: data_chunks_index }
+sequence_number_to_data_chunks_index_dict = {}
+
 while True:
     packet_with_header, sender_address = sock.recvfrom(1024)
     header = struct.unpack("!cII", packet_with_header[:9])
     data = packet_with_header[9:]
 
+    packet_type = header[0].decode('ascii')
+
+    if (packet_type == 'D'):
+        sequence_number = header[1]
+        data_chunks[data_chunks_index] = data.decode("utf-8")
+        sequence_number_to_data_chunks_index_dict[sequence_number] = data_chunks_index
+        data_chunks_index += 1
+    
     print_receipt_information(header, data)
 
-    packet_type = header[0].decode('ascii')
-     # TODO: how do we know when to end? Each sender ends an END packet when it is done with its chunk
     if (packet_type == 'E'):
         break
-
+    
 print('-----------------------------------------------------------------------------')
+
+file = open('result.txt', 'a')
+# sort dictionary by increasing sequence number (dict key)
+print('before sort')
+print(sequence_number_to_data_chunks_index_dict)
+print('after sort')
+sequence_number_to_data_chunks_index_dict = OrderedDict(sorted(sequence_number_to_data_chunks_index_dict.items()))
+print(sequence_number_to_data_chunks_index_dict)
+
+for sequence_number, index_number in sequence_number_to_data_chunks_index_dict.items():
+    file.write(data_chunks[index_number])
+
+file.close()

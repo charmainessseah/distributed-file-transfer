@@ -151,6 +151,8 @@ print("sender's print information:")
 send_packet(data, Packet_Type.DATA.value, sequence_number, requester_host_name, requester_port_number)
 
 # send end packet when done with data packets
-send_packet('end packet!', Packet_Type.END.value, sequence_number, requester_host_name, requester_port_number)
+sequence_number = 0
+length = 0
+send_packet('', Packet_Type.END.value, sequence_number, requester_host_name, requester_port_number)
 
 print('-----------------------------------------------------------------------------')
