@@ -5,17 +5,41 @@ import struct
 
 #Global variables
 udp_port = 12345
+file_name = "tracker.txt"
+
+def check_input(arg):
+    index = -1
+    for i in range(0, len(sys.argv)):
+        if(str(sys.argv[i]) == arg):
+            return i
+    return index
 
 #Checking the command line arguments
 def check_sys_arg():
+    global udp_port, file_name
     if(len(sys.argv) != 5):
         print('Please enter the correct number of arguments')
-    if(str(sys.argv[1]) != '-p' | str(sys.argv[3]) != '-o'):
-        print('Please enter arguments in correct format')
-    if(int(sys.argv[2]) <= 2049 | int(sys.argv[2]) >= 65536):
-        print('Please enter the correct requester port number')
-    global udp_port
-    udp_port = sys.argv[2]
+        exit()
+   
+    p_index = check_input('-p')
+    if(p_index != -1 and p_index != 4):
+        if((not sys.argv[p_index + 1].isdigit()) or int(sys.argv[p_index + 1]) <= 2049 or int(sys.argv[p_index + 1]) >= 65536):
+            print('Please enter requester port number integer value in range (2049, 65536)')
+            exit()
+        else:
+            udp_port = int(sys.argv[p_index + 1])
+    else:
+        print('Please enter sender port number in correct format')
+        exit()
+    
+    o_index = check_input('-o')
+    if(o_index != -1 and o_index != 4):
+        file_name = str(sys.argv[o_index + 1])
+    else:
+        print('Please enter sender port number in correct format')
+        exit()
+    
+
 
 # printing information for each packet that arrives
 # TODO: check packet type and print diff information if it is END packet
@@ -64,6 +88,7 @@ def read_and_parse_tracker_file(file_name):
 
     print(tracker_table)
 
+check_sys_arg()
 read_and_parse_tracker_file("tracker.txt")
 
 # create socket object

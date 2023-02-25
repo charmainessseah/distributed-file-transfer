@@ -39,7 +39,6 @@ def check_sys_args():
         exit()
 
     p_index = check_input('-p')
-    
     if(p_index != -1 and p_index != 10):
         if((not sys.argv[p_index + 1].isdigit()) or int(sys.argv[p_index + 1]) <= 2049 or int(sys.argv[p_index + 1]) >= 65536):
             print('Please enter sender port number integer value in range (2049, 65536)')
