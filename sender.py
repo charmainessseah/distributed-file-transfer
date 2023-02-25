@@ -1,27 +1,20 @@
 import sys
-import argparse
 from enum import Enum
+from datetime import datetime
 import socket
 import struct
 
 class Packet_Type(Enum):
-    request = 'R'
-    data = 'D'
-    end = 'E'
+    REQUEST = 'R'
+    DATA = 'D'
+    END = 'E'
 
-#variables sent as command line arguments, initializing with dummy values
+# variables sent as command line arguments, initializing with dummy values
 requester_port_number = 12345
 sender_port_number = 12344
 sequence_number = 0
 data_length = 0
 rate = 0
-
-#elif(str(sys.argv[1]) != '-p' | str(sys.argv[3]) != '-g' | str(sys.argv[5]) != '-r' | str(sys.argv[7]) != '-q' | str(sys.argv[9]) != '-l'):
-#        print('Please enter arguments in correct format')
-#    elif(int(sys.argv[2]) <= 2049 | int(sys.argv[2]) >= 65536):
-#       print('Please enter the correct sender port number')
-#   elif(int(sys.argv[4]) <= 2049 | int(sys.argv[4]) >= 65536):
-#       print('Please enter the correct requester port number')
 
 def check_input(arg):
     index = -1
@@ -93,35 +86,81 @@ def check_sys_args():
         print('Please enter correct arguments in correct format')
         exit()
 
-        
-
-
 # print packet information before each packet is sent to the requester
-def print_packet_information(requester_host_name, sequence_number, data_length, data):
-    print("time packet is sent: ")
-    print("IP address of requester: ", requester_host_name)
-    print("sequence number: ", sequence_number)
-    print("first 4 bytes of the payload: ", data[:4].decode("utf-8"))
+def print_packet_information(requester_host_name, sequence_number, data, packet_type):
+    if (packet_type == 'D'):
+        print('DATA Packet')
+    elif (packet_type == 'E'):
+        print('END Packet')
+
+    print('send time: ', datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+    print('requester addr: ', requester_host_name)
+    print('Sequence num: ', sequence_number)
+    print('length: ', len(data))
+    print('payload: ', data.decode('utf-8'))
+    print()
+
+# if file exists, read the file and return the file data
+# if file does not exist, return -1
+def read_file(file_name):
+    try:
+        with open(file_name, 'r') as reader:
+            data = reader.read()
+            return data
+    except:
+        return -1
+
+def send_packet(data, packet_type, sequence_number, requester_host_name, requester_port_number):
+    data = data.encode()
+    # assemble udp header
+    header = struct.pack('!cII', packet_type.encode('ascii'), sequence_number, len(data))
+    packet_with_header = header + data
+    sock.sendto(packet_with_header, (requester_host_name, requester_port_number))
+    print_packet_information(requester_host_name, sequence_number, data, packet_type)
+
+
+def send_all_packets(data, Packet_Type.DATA.value, sequence_number, requester_host_name, requester_port_number):
+    
+    
+    data = data.encode()
+    header = struct.pack('!cII', packet_type.encode('ascii'), sequence_number, len(data))
+    packet_with_header = header + data
+    sock.sendto(packet_with_header, (requester_host_name, requester_port_number))
+
 
 
 check_sys_args()
+print('sender port number: ', sender_port_number)
+print('requester port number: ', requester_port_number)
 
 # create socket object
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+udp_host = socket.gethostname()
+sock.bind((udp_host, sender_port_number))
+
+# wait for request packet
+print('waiting for requester to send the filename it wants to retrieve...')
+packet_with_header, sender_address = sock.recvfrom(1024)
+header = struct.unpack("!cII", packet_with_header[:9])
+file_name = packet_with_header[9:]
+
+print('received filename from requester: ', file_name.decode('utf-8'))
 
 requester_host_name = socket.gethostname()
-requester_port_number = 12345
 
-data = "Hello World! My name is Charmaine.".encode()
+# read the file data
+# TODO: if file does not exist (data == -1), then we send the END packet immediately
+data = read_file(file_name)
 
-# assemble udp header
-packet_type = (Packet_Type.data.value).encode('ascii')
-sequence_number = 1112
-data_length = len(data) 
-udp_header = struct.pack("!cII", packet_type, sequence_number, data_length)
+print('-----------------------------------------------------------------------------')
+print("sender's print information:")
 
-packet_with_header = udp_header + data
+# send data packets here
+send_packet(data, Packet_Type.DATA.value, sequence_number, requester_host_name, requester_port_number)
 
-print_packet_information(requester_host_name, sequence_number, data_length, data)
+# send end packet when done with data packets
+sequence_number = 0
+length = 0
+send_packet('', Packet_Type.END.value, sequence_number, requester_host_name, requester_port_number)
 
-sock.sendto(packet_with_header, (requester_host_name, requester_port_number))
+print('-----------------------------------------------------------------------------')

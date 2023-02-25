@@ -1,0 +1,77 @@
+#Checking the command line arguments
+def check_sys_arg():
+    global udp_port, file_name
+    if(len(sys.argv) != 5):
+        print('Please enter the correct number of arguments')
+        exit()
+   
+    p_index = check_input('-p')
+    if(p_index != -1 and p_index != 4):
+        if((not sys.argv[p_index + 1].isdigit()) or int(sys.argv[p_index + 1]) <= 2049 or int(sys.argv[p_index + 1]) >= 65536):
+            print('Please enter requester port number integer value in range (2049, 65536)')
+            exit()
+        else:
+            udp_port = int(sys.argv[p_index + 1])
+    else:
+        print('Please enter sender port number in correct format')
+        exit()
+    
+    o_index = check_input('-o')
+    if(o_index != -1 and o_index != 4):
+        file_name = str(sys.argv[o_index + 1])
+    else:
+        print('Please enter sender port number in correct format')
+        exit()
+    
+
+
+# printing information for each packet that arrives
+def print_receipt_information(header, data):
+    packet_type = header[0].decode('ascii')
+    if (packet_type == 'D'):
+        print('DATA Packet')
+    elif (packet_type == 'E'):
+        print('END Packet')
+
+    print('recv time: ', datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+    print('requester addr: ')
+    print('sequence num: ', header[1])
+    print('length: ', header[2])
+    print('payload: ', data.decode("utf-8"))
+    print()
+
+# reads and parses tracker.txt into a nested dictionary
+# details of nested dictionary are outlined below
+def read_and_parse_tracker_file(file_name):
+    try:
+        file = open(file_name, "r")
+    except:
+        print('Please enter the correct file name!')
+    
+    file_lines = file.readlines()
+
+    # below is the structure of the nested dictionary
+    # filename: {
+    #          id: {
+    #              sender_host_name: "some_host_name",
+    #              sender_port_number: 12345
+    #          }
+    # }
+    tracker_dict =  {}
+
+    for file_line in file_lines:
+        words_in_line = file_line.split()
+        curr_file_name = words_in_line[0]
+        id = int(words_in_line[1])
+        sender_host_name = words_in_line[2]
+        sender_port_number = words_in_line[3]
+
+        if curr_file_name not in tracker_dict:
+            tracker_dict[curr_file_name] = {}
+        if id not in tracker_dict[curr_file_name]:
+            tracker_dict[curr_file_name][id] = {}
+
+        tracker_dict[curr_file_name][id]['sender_host_name'] = sender_host_name
+        tracker_dict[curr_file_name][id]['sender_port_number'] = int(sender_port_number)
+
+    return tracker_dict
